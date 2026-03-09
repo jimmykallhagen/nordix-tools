@@ -1,7 +1,7 @@
 # term-run
 ---
 
-Part of the [Nordix and Yggdrsil- Nordix desktop environment](https://github.com/jimmykallhagen)  
+Part of the [Nordix and Yggdrasil- Nordix desktop environment](https://github.com/jimmykallhagen)  
 © 2025 Jimmy Källhagen - SPDX-License-Identifier: GPL-3.0-or-later
 
 ---
