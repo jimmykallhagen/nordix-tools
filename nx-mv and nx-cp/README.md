@@ -3,7 +3,7 @@
 **Nordix CPU-aware wrappers for `mv` and `cp`**
 
 Part of the [Yggdrasil – Nordix desktop environment](https://github.com/jimmykallhagen)  
-© 2025 Jimmy Källhagen — SPDX-License-Identifier: GPL-3.0-or-later
+© 2025 Jimmy Källhagen - SPDX-License-Identifier: GPL-3.0-or-later
 
 ---
 
@@ -30,7 +30,7 @@ The naive solution might be to give the process access to many cores. Empirical 
 
 Migrations happen rarely enough that cache stays warm, but frequently enough that neither core sustains a thermal throttle. The result is a higher **average** clock speed over the duration of the transfer compared to both single-core and many-core pinning.
 
-This is essentially manual **thermal-aware core parking** — not driven by power policy, but by giving the scheduler just enough room to breathe without drowning in cache misses.
+This is essentially manual **thermal-aware core parking** - not driven by power policy, but by giving the scheduler just enough room to breathe without drowning in cache misses.
 
 ---
 
@@ -38,7 +38,7 @@ This is essentially manual **thermal-aware core parking** — not driven by powe
 
 The first physical cores (core 0, core 1) are where the OS, interrupt handlers, and system processes naturally concentrate their work. On a system tuned with `nohz_full`, those first cores are explicitly reserved for the kernel.
 
-The **last physical cores** are typically the coolest and least loaded cores on the system — ideal candidates to absorb a sustained single-threaded workload without disturbing anything else.
+The **last physical cores** are typically the coolest and least loaded cores on the system - ideal candidates to absorb a sustained single-threaded workload without disturbing anything else.
 
 ---
 
@@ -55,7 +55,7 @@ This matters because on AMD Zen (and other architectures), logical cores are **n
 
 A naive calculation of `last_core * 2` would produce the wrong result. By reading the topology map, the tools correctly identify the **first thread** (lowest logical ID) of each of the two last physical cores, regardless of CPU architecture or thread count.
 
-SMT siblings (the second thread of each physical core) are intentionally excluded from the `taskset` — two cores from different physical dies is more effective for thermal rotation than two threads sharing the same physical core and thermal unit.
+SMT siblings (the second thread of each physical core) are intentionally excluded from the `taskset` - two cores from different physical dies is more effective for thermal rotation than two threads sharing the same physical core and thermal unit.
 
 ---
 
@@ -124,10 +124,18 @@ The tools print which logical CPU cores are active before executing, so you can 
 ## Requirements
 
 - Linux with `/sys/devices/system/cpu/` topology exposed (standard on all modern kernels)
-- `taskset` — part of the `util-linux` package, available by default on all major distributions
+- `taskset` - part of the `util-linux` package, available by default on all major distributions
+
+---
+
+## TO Do
+When I have more time to spare, I think I might add:
+- [ ] Progress bar
+- [ ] Live transfer speed (MB/s)
+- If there is someone who feels like contributing, then all help is welcome, after all, this is to make life with Linux even better for everyone
 
 ---
 
 ## Part of Nordix
 
-These tools are part of the Nordix/Yggdrasil performance toolchain.
+These tools are part of the Nordix/Yggdrasil toolchain.
