@@ -18,7 +18,7 @@ when you run zpool-busy, there are 4 responses you can get
 
 ## How to build it
 
-```
+```bash
 gcc zpool-busy zpool-busy.c
 
 ```
