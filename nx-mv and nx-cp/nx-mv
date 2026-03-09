@@ -1,0 +1,74 @@
+#!/bin/bash
+##===================================================================##
+ # SPDX-License-Identifier: GPL-3.0-or-later                         #
+ # Copyright (c) 2025 Jimmy Källhagen                                #
+ # Part of Yggdrasil - Nordix desktop environment                    #
+ # Nordix and Yggdrasil are registered trademarks of Jimmy Källhagen # 
+##===================================================================##
+
+# Wrapper for running commands on the last two physical CPU cores
+
+# The mv command is a single core process,
+# but that then forces mv to use two physical cores
+# which can boost mv by allowing mv to switch cores
+# when one starts to get hot and then maintain a higher cpu boost.
+# using more cores than two does not seem to have a positive effect on performance
+
+#  
+#  Install: sudo cp nx-mv /usr/local/bin
+#
+#  suggestions for configt.fish: alias mv='nx-mv'
+#
+#
+#
+GREEN='\033[38;2;0;255;0m'
+WHITE='\033[38;2;255;255;255m'
+NVBLUE='\033[38;2;175;251;253m'
+NARTIC='\033[38;2;156;230;255m'
+NHYPRBLUE='\033[38;2;0;210;255m'
+NC='\033[0m' 
+# Detect CPU topology via /sys to find the last two physical cores. 
+# Avoids the assumption that logical cores are numbered sequentially (not true on AMD Zen etc.) 
+# On R9 7950X: physical core 14 → thread 14.30 and core 15 → thread 15.31 
+# We choose thread 0 (first thread) from each physical core to avoid SMT siblings.
+
+declare -A core_map
+for cpu_path in /sys/devices/system/cpu/cpu[0-9]*; do
+    coreid_file="$cpu_path/topology/core_id"
+    [[ -f "$coreid_file" ]] || continue
+    coreid=$(cat "$coreid_file")
+    cpunum=${cpu_path##*/cpu}
+    core_map["$coreid"]+="$cpunum "
+done
+
+# Sort core_id numerically, take the two highest (last physical cores)
+sorted_cores=($(echo "${!core_map[@]}" | tr ' ' '\n' | sort -n))
+total_physical=${#sorted_cores[@]}
+
+if (( total_physical >= 2 )); then
+    last_coreid=${sorted_cores[-1]}
+    second_last_coreid=${sorted_cores[-2]}
+
+# Select the lowest logical thread (thread 0) from each physical core
+    thread1=$(echo ${core_map[$last_coreid]} | tr ' ' '\n' | sort -n | head -1)
+    thread2=$(echo ${core_map[$second_last_coreid]} | tr ' ' '\n' | sort -n | head -1)
+    cpu_list="$thread2,$thread1"
+elif (( total_physical == 1 )); then
+# Just one physical core, use its first two logical threads
+    threads=($(echo ${core_map[${sorted_cores[0]}]} | tr ' ' '\n' | sort -n))
+    cpu_list="${threads[0]},${threads[1]:-${threads[0]}}"
+else
+# Fallback if /sys is not available
+    cpu_list="0,1"
+fi
+
+total_threads=$(nproc)
+cores=$total_physical
+
+# Show which CPUs we are using (for debugging)
+echo -e "${NARTIC}System has $total_threads threads and ${HYPRBLUE}$cores ${NAARTIC}physical core" >&2
+echo -e "${NARTIC}Enable process management on CPU${WHITE}:${HYPRBLUE} $cpu_list" >&2
+echo -e "${GREEN}Starting:${NARTIC} Nordix ${WHITE}-${NARTIC} Move" >&2
+
+# Run the command with the taskset
+exec taskset -c "$cpu_list" mv "$@"
