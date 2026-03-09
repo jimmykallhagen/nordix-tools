@@ -2,6 +2,9 @@
 
 #### **A file size analysis tool for understanding the storage characteristics of directories. Included with Nordix Desktop to help users make informed decisions when configuring ZFS dataset options like recordsize.**
 
+Part of the [Nordix and Yggdrasil - Nordix desktop environment](https://github.com/jimmykallhagen)  
+© 2025 Jimmy Källhagen - SPDX-License-Identifier: GPL-3.0-or-later
+
 ---
 
 ## Usage
@@ -36,7 +39,8 @@ nordix-filestat -q /path/to/directory
 
 #### **By default, nordix-filestat excludes file types that are irrelevant when measuring actual data content: text files, scripts, source code, configs, images, icons, fonts, desktop entries, empty files and symlinks.**
 
-- **USE:** -a to include everything.
+- **USE:**
+-  -a to include everything.
 
 ---
 
@@ -47,12 +51,9 @@ nordix-filestat -q /path/to/directory
 - The optimal value depends on what kind of files a dataset actually contains.
 - This tool gives you the data to make that decision yourself rather than guessing.
 
----
-
-## License
-* SPDX-License-Identifier: GPL-3.0-or-later                         
-* Copyright (c) 2025 Jimmy Källhagen                                
-* Part of **Yggdrasil - Nordix Desktop Environment**                    
-* Nordix and Yggdrasil are trademarks of Jimmy Källhagen
 
 ---
+
+## Part of Nordix
+
+These tools are part of the Nordix/Yggdrasil toolchain.
