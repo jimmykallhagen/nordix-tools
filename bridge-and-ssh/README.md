@@ -6,9 +6,10 @@ Part of the [Nordix and Yggdrasil - Nordix desktop environment](https://github.c
 ---
 
 ## Easy VM with nordix-bridge-network
-I developed these myself because I thought it would be easier for everyone who wants to run VM, you run nordix-bridge-network once, then you automatically fix a robust network for your VM, virt-manager will automatically use this "br0". 
+ I myself found it a hassle every time I set up a machine to run VMs, so I created this to give myself and everyone else a simple network solution for their VMs.
+You run nordix-bridge-network once, then you automatically fix a robust network for your VM, virt-manager will automatically use this "br0". 
 
-Your network setup in Virtmanager should look like this after you have used the script: 
+ Your network setup in virt-manager should look like this after running the script: 
 - Network source [Bridge device] 
 - Device name [br0] 
 - Device model [virtio] 
@@ -25,7 +26,7 @@ sudo nordix-bridge-network
 
 ## Easy SSH with nordix-ssh-setup
 
-nordix-ssh-setup will activate SSH and show your username and ip-addres in a zenity popup window, this is what you use for SSH.
+nordix-ssh-setup will activate SSH and display your username and IP address in a Zenity popup, this is what you need to connect
 SSH is usable for VM or if you want to be able to run commands from to phone or another computer, it is very easy to be able to use apps such as termius, to be able to get a terminal in your phone that is connected to your PC
 
 **How to use**
@@ -36,7 +37,7 @@ sudo nordix-ssh-setup
 ---
 
 ## Easy ip-adress check 
-nordix-show-ip will show your ip addresses in a zenity popup window, this is your ip address you use for ssh
+nordix-show-ip will show your ip addresses in a zenity popup window,  this is the IP address you use for SSH
 
 **How to use**
 ```bash
@@ -53,5 +54,5 @@ sudo nordix-show-ip
 ## Part of Nordix
 
 These tools are part of the Nordix/Yggdrasil toolchain.
-
+jag täm
 ---
