@@ -16,6 +16,14 @@ when you run zpool-busy, there are 4 responses you can get
 
 ---
 
+## How to build it
+
+```
+gcc zpool-busy zpool-busy.c
+
+```
+
+
 ## Part of Nordix
 
 These tools are part of the Nordix/Yggdrasil toolchain.
