@@ -1,0 +1,288 @@
+#!/bin/bash
+##===================================================================##
+ # SPDX-License-Identifier: Business Source License (BSL)            #
+ # Copyright (c) 2025 Jimmy Källhagen                                #
+ # Part of Yggdrasil - Nordix desktop environment                    #
+ # Nordix and Yggdrasil are registered trademarks of Jimmy Källhagen # 
+##===================================================================##
+
+# Wrapper for running commands on the last two physical CPU cores
+# The cp command is a single core process,
+# but that then forces mv to use two physical cores
+# which can boost mv by allowing mv to switch cores
+# when one starts to get hot and then maintain a higher cpu boost.
+# using more cores than two does not seem to have a positive effect on performance
+#  
+#  Install: sudo cp nx-cp /usr/local/bin
+#
+#  suggestions for config.fish: alias cp='nx-cp'
+#
+#
+#
+GREEN='\033[38;2;0;255;0m'
+WHITE='\033[38;2;255;255;255m'
+NVBLUE='\033[38;2;175;251;253m'
+NARTIC='\033[38;2;156;230;255m'
+NHYPRBLUE='\033[38;2;0;210;255m'
+NC='\033[0m'
+BOLD='\033[1m'
+
+# ─── CPU topology detection ─────────────────────────────────────────
+# Detect CPU topology via /sys to find the last two physical cores. 
+# Avoids the assumption that logical cores are numbered sequentially (not true on AMD Zen etc.) 
+# On R9 7950X: physical core 14 → thread 14.30 and core 15 → thread 15.31 
+# We choose thread 0 (first thread) from each physical core to avoid SMT siblings.
+declare -A core_map
+for cpu_path in /sys/devices/system/cpu/cpu[0-9]*; do
+    coreid_file="$cpu_path/topology/core_id"
+    [[ -f "$coreid_file" ]] || continue
+    coreid=$(cat "$coreid_file")
+    cpunum=${cpu_path##*/cpu}
+    core_map["$coreid"]+="$cpunum "
+done
+
+# Sort core_id numerically, take the two highest (last physical cores)
+sorted_cores=($(echo "${!core_map[@]}" | tr ' ' '\n' | sort -n))
+total_physical=${#sorted_cores[@]}
+
+if (( total_physical >= 2 )); then
+    last_coreid=${sorted_cores[-1]}
+    second_last_coreid=${sorted_cores[-2]}
+    # Select the lowest logical thread (thread 0) from each physical core
+    thread1=$(echo ${core_map[$last_coreid]} | tr ' ' '\n' | sort -n | head -1)
+    thread2=$(echo ${core_map[$second_last_coreid]} | tr ' ' '\n' | sort -n | head -1)
+    cpu_list="$thread2,$thread1"
+elif (( total_physical == 1 )); then
+    # Just one physical core, use its first two logical threads
+    threads=($(echo ${core_map[${sorted_cores[0]}]} | tr ' ' '\n' | sort -n))
+    cpu_list="${threads[0]},${threads[1]:-${threads[0]}}"
+else
+    # Fallback if /sys is not available
+    cpu_list="0,1"
+fi
+
+total_threads=$(nproc)
+cores=$total_physical
+
+# Show which CPUs we are using
+echo -e "${GREEN}Starting:${NARTIC} Nordix ${WHITE}-${NARTIC} Copy" >&2
+echo -e "${NARTIC}* System has $total_threads threads and ${NHYPRBLUE}$cores ${NARTIC}physical cores" >&2
+echo -e "${NARTIC}* Enable process management on CPU${WHITE}:${NHYPRBLUE} $cpu_list" >&2
+
+# ─── Helper: human readable sizes ───────────────────────────────────
+human_size() {
+    local bytes=$1
+    if (( bytes >= 1000000000 )); then
+        printf "%.2f GB" "$(echo "scale=2; $bytes / 1000000000" | bc)"
+    elif (( bytes >= 1000000 )); then
+        printf "%.1f MB" "$(echo "scale=1; $bytes / 1000000" | bc)"
+    elif (( bytes >= 1000 )); then
+        printf "%.1f KB" "$(echo "scale=1; $bytes / 1000" | bc)"
+    else
+        printf "%d B" "$bytes"
+    fi
+}
+
+human_speed() {
+    local bytes_per_sec=$1
+    if (( bytes_per_sec >= 1000000000 )); then
+        printf "%.2f GB/s" "$(echo "scale=2; $bytes_per_sec / 1000000000" | bc)"
+    elif (( bytes_per_sec >= 1000000 )); then
+        printf "%.1f MB/s" "$(echo "scale=1; $bytes_per_sec / 1000000" | bc)"
+    else
+        printf "%.1f KB/s" "$(echo "scale=1; $bytes_per_sec / 1000" | bc)"
+    fi
+}
+
+# ─── Parse arguments ────────────────────────────────────────────────
+# Separate cp flags from source files and destination
+# The last argument is the destination
+args=("$@")
+arg_count=${#args[@]}
+
+if (( arg_count < 2 )); then
+    echo -e "${WHITE}Usage: nx-cp ${NARTIC}<source(s)> <destination>${NC}" >&2
+    exit 1
+fi
+
+# Last argument is destination
+dest="${args[-1]}"
+
+# Separate flags and sources
+cp_flags=()
+sources=()
+for (( i=0; i < arg_count - 1; i++ )); do
+    arg="${args[$i]}"
+    if [[ "$arg" == -* ]]; then
+        cp_flags+=("$arg")
+    else
+        sources+=("$arg")
+    fi
+done
+
+if (( ${#sources[@]} == 0 )); then
+    echo -e "${WHITE}Error: No source files specified${NC}" >&2
+    exit 1
+fi
+
+# ─── Calculate total size ───────────────────────────────────────────
+total_bytes=0
+for src in "${sources[@]}"; do
+    if [[ -e "$src" ]]; then
+        src_bytes=$(du -sb "$src" 2>/dev/null | awk '{print $1}')
+        total_bytes=$(( total_bytes + src_bytes ))
+    else
+        echo -e "${WHITE}Error: '$src' not found${NC}" >&2
+        exit 1
+    fi
+done
+
+echo -e "${NARTIC}* Total size: ${NHYPRBLUE}$(human_size $total_bytes)${NC}" >&2
+
+# ─── Progress bar function ──────────────────────────────────────────
+# Draws two lines that update in place:
+#   Line 1: progress bar with percentage
+#   Line 2: size, speed, ETA (overwritten by Complete at end)
+CLR='\033[2K\r'
+UP='\033[1A\r'
+draw_progress() {
+    local copied=$1
+    local total=$2
+    local elapsed=$3
+
+    if (( total == 0 )); then
+        return
+    fi
+
+    # Terminal width for bar sizing
+    local term_width=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
+
+    # Percentage
+    local pct=$(( copied * 100 / total ))
+    if (( pct > 100 )); then pct=100; fi
+
+    # Speed
+    local speed=0
+    if (( elapsed > 0 )); then
+        speed=$(( copied / elapsed ))
+    fi
+
+    # ETA
+    local eta_str="--:--"
+    if (( speed > 0 )); then
+        local remaining=$(( total - copied ))
+        local secs=$(( remaining / speed ))
+        eta_str=$(printf "%02d:%02d" "$(( secs / 60 ))" "$(( secs % 60 ))")
+    fi
+
+    local size_str="$(human_size $copied)/$(human_size $total)"
+    local speed_str="$(human_speed $speed)"
+
+    # Bar width
+    local bar_width=$(( term_width - 10 ))
+    if (( bar_width < 10 )); then bar_width=10; fi
+    if (( bar_width > 60 )); then bar_width=60; fi
+
+    # Build bar
+    local filled=$(( pct * bar_width / 100 ))
+    local empty=$(( bar_width - filled ))
+    local bar=""
+    for (( b=0; b < filled; b++ )); do bar+="█"; done
+    for (( b=0; b < empty; b++ ));  do bar+="░"; done
+
+    # Line 1: bar + percentage
+    echo -ne "${CLR}  ${GREEN}${bar} ${WHITE}${pct}%%${NC}\n" >&2
+    # Line 2: size, speed, ETA
+    echo -ne "${CLR}  ${NHYPRBLUE}${size_str} ${NARTIC}@ ${GREEN}${speed_str} ${NARTIC}ETA${WHITE}: ${NHYPRBLUE}${eta_str}${NC}" >&2
+    # Move cursor back up to line 1
+    echo -ne "${UP}" >&2
+}
+
+# ─── Copy with progress monitoring ──────────────────────────────────
+# We copy file by file, monitoring destination size growth
+
+start_time=$(date +%s)
+copied_before=0
+
+for src in "${sources[@]}"; do
+    src_bytes=$(du -sb "$src" 2>/dev/null | awk '{print $1}')
+    src_name=$(basename "$src")
+
+    if [[ -d "$src" ]]; then
+        # Directory copy — determine target path
+        if [[ -d "$dest" ]]; then
+            target_dir="$dest/$src_name"
+        else
+            target_dir="$dest"
+        fi
+
+        # Start the cp process in background with taskset
+        taskset -c "$cpu_list" cp "${cp_flags[@]}" -a "$src" "$dest" &
+        cp_pid=$!
+
+        # Monitor progress
+        while kill -0 "$cp_pid" 2>/dev/null; do
+            if [[ -d "$target_dir" ]]; then
+                current_dest_bytes=$(du -sb "$target_dir" 2>/dev/null | awk '{print $1}')
+            else
+                current_dest_bytes=0
+            fi
+            now=$(date +%s)
+            elapsed=$(( now - start_time ))
+            total_copied=$(( copied_before + current_dest_bytes ))
+            draw_progress "$total_copied" "$total_bytes" "$elapsed"
+            sleep 0.5
+        done
+
+        wait "$cp_pid"
+        cp_exit=$?
+
+    else
+        # Single file copy
+        if [[ -d "$dest" ]]; then
+            target_file="$dest/$src_name"
+        else
+            target_file="$dest"
+        fi
+
+        # Start cp in background with taskset
+        taskset -c "$cpu_list" cp "${cp_flags[@]}" "$src" "$target_file" &
+        cp_pid=$!
+
+        # Monitor progress
+        while kill -0 "$cp_pid" 2>/dev/null; do
+            if [[ -f "$target_file" ]]; then
+                current_dest_bytes=$(du -sb "$target_file" 2>/dev/null | awk '{print $1}')
+            else
+                current_dest_bytes=0
+            fi
+            now=$(date +%s)
+            elapsed=$(( now - start_time ))
+            total_copied=$(( copied_before + current_dest_bytes ))
+            draw_progress "$total_copied" "$total_bytes" "$elapsed"
+            sleep 0.5
+        done
+
+        wait "$cp_pid"
+        cp_exit=$?
+    fi
+
+    if (( cp_exit != 0 )); then
+        echo "" >&2
+        echo -e "${WHITE}Error: cp failed for '$src' (exit code: $cp_exit)${NC}" >&2
+        exit "$cp_exit"
+    fi
+
+    copied_before=$(( copied_before + src_bytes ))
+done
+
+# ─── Final status ───────────────────────────────────────────────────
+end_time=$(date +%s)
+total_elapsed=$(( end_time - start_time ))
+if (( total_elapsed == 0 )); then total_elapsed=1; fi
+avg_speed=$(( total_bytes / total_elapsed ))
+
+# Draw final 100%
+draw_progress "$total_bytes" "$total_bytes" "$total_elapsed"
+# Move down to line 2 (stats) and overwrite with Complete
+echo -ne "\n${CLR}  ${GREEN}Complete: ${NHYPRBLUE}$(human_size $total_bytes)${NARTIC} in ${NHYPRBLUE}${total_elapsed}s${NARTIC} (avg ${GREEN}$(human_speed $avg_speed)${NARTIC})${NC}\n" >&2
