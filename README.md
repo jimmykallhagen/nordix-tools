@@ -53,3 +53,24 @@ sudo chmod +x /usr/lib/nordix/bin/*
 echo 'export PATH="/usr/lib/nordix/bin:$PATH"' >> ~/.profile
 ```
 ---
+
+## How to make nx-cp and nx-mv standrad
+
+For fish shell
+```bash
+echo "alias mv='nx-mv'" >> ~/.config/fish/config.fish
+echo "alias cp='nx-cp'" >> ~/.config/fish/config.fish
+```
+
+For bash shell
+```bash
+echo "alias mv='nx-mv'" >> ~/.bashrc
+echo "alias cp='nx-cp'" >> ~/.bashrc
+```
+
+For zsh
+```bash
+echo "alias mv='nx-mv'" >> ~/.zshenv
+echo "alias cp='nx-cp'" >> ~/.zshenv
+```
+---
