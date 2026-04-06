@@ -54,7 +54,7 @@ echo 'export PATH="/usr/lib/nordix/bin:$PATH"' >> ~/.profile
 ```
 ---
 
-## How to make nx-cp and nx-mv standrad
+## How to make nx-cp and nx-mv alias for cp and mv
 
 For fish shell
 ```bash
