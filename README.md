@@ -43,6 +43,17 @@ this tool also sees how many cores your cpu has and then uses the last two physi
 
 ---
 
+10. **nordix-sock-call**
+
+- A tool to use when you need to activate a socket
+- Usage: nordix-sock-call <socket-path> <message>
+
+**Build**
+```bash
+clang -o nordix-sock-call nordix-sock-call.c
+```
+---
+
 ## How to install
 ```bash
 mkdir ~/builds
