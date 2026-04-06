@@ -42,3 +42,14 @@ this tool also sees how many cores your cpu has and then uses the last two physi
 - When using zfs with snapshots, it is easy to overfill your storage space and you may therefore need to clear snapshots, this takes time and is unnecessarily complicated to do manually, with zfs-destroy-snapshot you can now quickly clear your snapshots.
 
 ---
+
+## How to install
+```bash
+mkdir ~/builds
+cd ~/builds
+git clone https://github.com/jimmykallhagen/nordix-tools.git
+sudo cp -r ~/builds/nordix-tools/usr /
+sudo chmod +x /usr/lib/nordix/bin/*
+echo 'export PATH="/usr/lib/nordix/bin:$PATH"' >> ~/.profile
+```
+---
