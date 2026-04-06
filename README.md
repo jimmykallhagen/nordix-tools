@@ -13,16 +13,16 @@
 4. **nx-show-ip**
 - Easily displays your current IP address in a zenity, useful for ssh and so on.
 
-6. nordix-ssh-setup
+6. **nordix-ssh-setup**
 - Installs and activates ssh easily without any hassle, then displays your username and IP address for ssh in a zenity when the script is finished. must be run with sudo
 
-7. nx-cp
+7. **nx-cp**
 - cp and move are processes that run single core. by forcing these processes to use two physical cores we can now give breathing room and maintain a higher boost clock without thermal throttling. these tools also show transfer speed and progress.
 this tool also sees how many cores your cpu has and then uses the last two physical cores to avoid burdening the first cores that your system is using.
 
-8. nx-mv
+8. **nx-mv**
 - cp and move are processes that run single core. by forcing these processes to use two physical cores we can now give breathing room and maintain a higher boost clock without thermal throttling. these tools also show transfer speed and progress.
 this tool also sees how many cores your cpu has and then uses the last two physical cores to avoid burdening the first cores that your system is using.
 
-9. zfs-destroy-snapshots
+9. **zfs-destroy-snapshots**
 - When using zfs with snapshots, it is easy to overfill your storage space and you may therefore need to clear snapshots, this takes time and is unnecessarily complicated to do manually, with zfs-destroy-snapshot you can now quickly clear your snapshots.
