@@ -1,4 +1,4 @@
-# nordix Tools
+# ![nordix-tools-icon](https://github.com/jimmykallhagen/Nordix/blob/main/icons/hicolor/128x128/apps/nordix-term.png) **Nordix Tools**
 
 **Part of:** [Nordix](https://github.com/jimmykallhagen/Nordix)  
 **Author:** Jimmy Källhagen  
