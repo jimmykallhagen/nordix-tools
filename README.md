@@ -59,7 +59,8 @@ clang -o nordix-sock-call nordix-sock-call.c
 mkdir ~/builds
 cd ~/builds
 git clone https://github.com/jimmykallhagen/nordix-tools.git
-sudo cp -r ~/builds/nordix-tools/usr /
+sudo mkdir -p /usr/lib/nordix/bin
+sudo cp -r ~/builds/nordix-tools/usr
 sudo chmod +x /usr/lib/nordix/bin/*
 echo 'export PATH="/usr/lib/nordix/bin:$PATH"' >> ~/.profile
 ```
