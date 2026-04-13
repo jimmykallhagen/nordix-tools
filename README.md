@@ -61,7 +61,6 @@ cd ~/builds
 git clone https://github.com/jimmykallhagen/nordix-tools.git
 sudo mkdir -p /usr/lib/nordix/bin
 sudo cp -r ~/builds/nordix-tools/usr
-sudo chmod +x /usr/lib/nordix/bin/*
 echo 'export PATH="/usr/lib/nordix/bin:$PATH"' >> ~/.profile
 ```
 ---
