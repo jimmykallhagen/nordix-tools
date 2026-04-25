@@ -1,7 +1,7 @@
 # Nordix CPU-Logic helper
 
 Part of the [Nordix and Yggdrasil - Nordix desktop environment](https://github.com/jimmykallhagen)  
-© 2025 Jimmy Källhagen - SPDX-License-Identifier: PolyForm Noncommercial License 1.0.0
+© 2025 Jimmy Källhagen
 
 ---
 
