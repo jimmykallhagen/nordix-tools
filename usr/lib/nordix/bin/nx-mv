@@ -1,10 +1,15 @@
 #!/bin/bash
-##===================================================================##
- # SPDX-License-Identifier: Business Source License (BSL)            #
- # Copyright (c) 2025 Jimmy Källhagen                                #
- # Part of Yggdrasil - Nordix desktop environment                    #
- # Nordix and Yggdrasil are registered trademarks of Jimmy Källhagen # 
-##===================================================================##
+##============================================================================##
+# SPDX-License-Identifier: GPL-3.0-or-later                                  #
+# Nordix license - https://www.gnu.org/licenses/gpl-3.0.html                 #
+# Copyright (c) 2025- The Nordix Authors                                     #
+# Part of Nordix - https://github.com/jimmykallhagen/Nordix                  #
+#                                                                            #
+# This program is free software: you can redistribute it and/or modify       #
+# it under the terms of the GNU General Public License as published by       #
+# the Free Software Foundation, either version 3 of the License, or          #
+# (at your option) any later version. See <https://www.gnu.org/licenses/>.   #
+##============================================================================##
 
 # Wrapper for running commands on the last two physical CPU cores
 # The mv command is a single core process,
