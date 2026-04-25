@@ -2,7 +2,7 @@
 
 **Part of:** [Nordix](https://github.com/jimmykallhagen/Nordix)  
 **Author:** Jimmy Källhagen  
-**License:** PolyForm-Noncommercial-1.0.0
+**License:** GPL-3.0-or-later
 
 ---
 
